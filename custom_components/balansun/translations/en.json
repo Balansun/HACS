@@ -1,0 +1,125 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Balansun",
+        "description": "Connect to one router REST API (MQTT remains the default). Add the integration again for each additional router. After setup, use **Configure** for integration mode and refresh interval; use **Reconfigure** (⋮ menu) to change the router URL or API token.",
+        "data": {
+          "host": "Router base URL",
+          "api_token": "API token (optional)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Balansun",
+        "description": "Change the router base URL or API token. Leave API token empty to keep the current token.",
+        "data": {
+          "host": "Router base URL",
+          "api_token": "API token (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach /api/v1/public on the router (check URL and network)",
+      "invalid_auth": "API token rejected (HTTP 401 on /api/v1/public)"
+    },
+    "abort": {
+      "already_configured": "This router URL is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Balansun options",
+        "description": "**REST only** is the default — full entity set via REST polling. Switch to **Companion** only when MQTT discovery is already active on this router (avoids duplicate entities; HACS adds the republish button only). Changing the mode reloads entities immediately.\n\n---\n\nLower refresh interval = more responsive sensors; higher = less load on the router LAN. Availability behavior on failed polls is configurable below.",
+        "data": {
+          "integration_mode": "Integration mode",
+          "scan_interval": "REST refresh interval (seconds)",
+          "skip_unavailable_on_failure": "Skip unavailable state on failed refresh",
+          "failure_count_until_unavailable": "Failed refreshes before unavailable (skip mode, 0 = never)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "integration_mode": {
+      "options": {
+        "rest_only": "REST only (default) — Full entity set via REST polling (sensors, vacation, triac, actions, …).",
+        "companion": "Companion — MQTT discovery already active: HACS adds only Republish MQTT discovery (no duplicate entities)."
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "expert_regulation_mode": {
+        "name": "Expert regulation mode"
+      }
+    },
+    "number": {
+      "regulation_gain": {
+        "name": "Regulation gain"
+      },
+      "max_routed_w": {
+        "name": "Max routed power"
+      }
+    },
+    "sensor": {
+      "rte_today": {
+        "name": "RTE today"
+      },
+      "rte_tomorrow": {
+        "name": "RTE tomorrow"
+      },
+      "linky_ltarf": {
+        "name": "Linky tariff option"
+      },
+      "safety_lockout_reasons": {
+        "name": "Safety lockout reasons"
+      },
+      "self_test_severity_zc": {
+        "name": "Self-test ZC severity"
+      },
+      "self_test_last_run": {
+        "name": "Self-test last run"
+      },
+      "grid_net_w": {
+        "name": "Grid net power"
+      },
+      "house_load_w": {
+        "name": "House load"
+      },
+      "pv_production_w": {
+        "name": "PV production"
+      }
+    },
+    "light": {
+      "status_led_color_activity": {
+        "name": "Status LED color activity"
+      },
+      "status_led_color_regulation": {
+        "name": "Status LED color regulation"
+      }
+    },
+    "binary_sensor": {
+      "mqtt_connected": {
+        "name": "MQTT connected"
+      },
+      "source_stale": {
+        "name": "Source stale"
+      },
+      "safety_lockout_active": {
+        "name": "Safety lockout"
+      },
+      "self_test_running": {
+        "name": "Self-test running"
+      },
+      "telemetry_ready": {
+        "name": "Telemetry ready"
+      }
+    },
+    "button": {
+      "self_test_run": {
+        "name": "Run self-test"
+      }
+    }
+  }
+}

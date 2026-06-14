@@ -1,0 +1,14 @@
+{
+  "name": "balansun-hacs",
+  "private": true,
+  "description": "Build scripts for Balansun HACS integration brand assets.",
+  "license": "EUPL-1.2",
+  "scripts": {
+    "sync:brand": "node scripts/sync-brand-from-esp32.mjs",
+    "generate:icons": "node scripts/generate-integration-icons.mjs",
+    "prepare:brand": "npm run sync:brand && npm run generate:icons"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  }
+}

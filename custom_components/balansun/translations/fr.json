@@ -1,0 +1,125 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Balansun",
+        "description": "Connexion à l'API REST d'un routeur (MQTT reste le chemin par défaut). Ajoutez l'intégration à nouveau pour chaque routeur. Ensuite : **Configurer** pour le mode et l'intervalle d'actualisation ; **Reconfigurer** (menu ⋮) pour l'URL ou le jeton API.",
+        "data": {
+          "host": "URL de base du routeur",
+          "api_token": "Jeton API (optionnel)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurer Balansun",
+        "description": "Modifier l'URL de base ou le jeton API. Laissez le jeton vide pour conserver le jeton actuel.",
+        "data": {
+          "host": "URL de base du routeur",
+          "api_token": "Jeton API (optionnel)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible d'atteindre /api/v1/public sur le routeur (vérifiez l'URL et le réseau)",
+      "invalid_auth": "Jeton API refusé (HTTP 401 sur /api/v1/public)"
+    },
+    "abort": {
+      "already_configured": "Cette URL de routeur est déjà configurée"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Balansun",
+        "description": "**REST seul** est le mode par défaut — ensemble complet d'entités via polling REST. Passer en **Compagnon** uniquement si la découverte MQTT est déjà active sur ce routeur (évite les doublons ; HACS n'ajoute que le bouton republish). Le changement de mode recharge les entités immédiatement.\n\n---\n\nIntervalle court = capteurs plus réactifs ; intervalle long = moins de charge sur le LAN du routeur. Le comportement de disponibilité en cas d'échec d'actualisation est configurable ci-dessous.",
+        "data": {
+          "integration_mode": "Mode d'intégration",
+          "scan_interval": "Intervalle d'actualisation REST (secondes)",
+          "skip_unavailable_on_failure": "Ignorer l'état indisponible en cas d'échec d'actualisation",
+          "failure_count_until_unavailable": "Échecs d'actualisation avant indisponible (mode ignorer, 0 = jamais)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "integration_mode": {
+      "options": {
+        "rest_only": "REST seul (par défaut) — Ensemble complet d'entités via polling REST (capteurs, vacances, triac, actions, …).",
+        "companion": "Compagnon — Découverte MQTT déjà active : HACS n'ajoute que Republier la découverte MQTT (pas de doublons)."
+      }
+    }
+  },
+  "entity": {
+    "select": {
+      "expert_regulation_mode": {
+        "name": "Mode régulation expert"
+      }
+    },
+    "number": {
+      "regulation_gain": {
+        "name": "Gain de régulation"
+      },
+      "max_routed_w": {
+        "name": "Puissance routée max"
+      }
+    },
+    "sensor": {
+      "rte_today": {
+        "name": "RTE aujourd'hui"
+      },
+      "rte_tomorrow": {
+        "name": "RTE demain"
+      },
+      "linky_ltarf": {
+        "name": "Option tarifaire Linky"
+      },
+      "safety_lockout_reasons": {
+        "name": "Motifs verrouillage sécurité"
+      },
+      "self_test_severity_zc": {
+        "name": "Gravité auto-test ZC"
+      },
+      "self_test_last_run": {
+        "name": "Dernier auto-test"
+      },
+      "grid_net_w": {
+        "name": "Puissance nette réseau"
+      },
+      "house_load_w": {
+        "name": "Charge maison"
+      },
+      "pv_production_w": {
+        "name": "Production PV"
+      }
+    },
+    "light": {
+      "status_led_color_activity": {
+        "name": "Couleur LED activité"
+      },
+      "status_led_color_regulation": {
+        "name": "Couleur LED régulation"
+      }
+    },
+    "binary_sensor": {
+      "mqtt_connected": {
+        "name": "MQTT connecté"
+      },
+      "source_stale": {
+        "name": "Source obsolète"
+      },
+      "safety_lockout_active": {
+        "name": "Verrouillage sécurité"
+      },
+      "self_test_running": {
+        "name": "Auto-test en cours"
+      },
+      "telemetry_ready": {
+        "name": "Télémétrie prête"
+      }
+    },
+    "button": {
+      "self_test_run": {
+        "name": "Lancer l'auto-test"
+      }
+    }
+  }
+}

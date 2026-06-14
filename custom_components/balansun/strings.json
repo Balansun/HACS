@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Balansun",
+        "description": "Connect to one router REST API (MQTT remains the default). Add the integration again for each additional router. After setup, use **Configure** for integration mode and refresh interval; use **Reconfigure** (⋮ menu) to change the router URL or API token.",
+        "data": {
+          "host": "Router base URL",
+          "api_token": "API token (optional)"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Balansun",
+        "description": "Change the router base URL or API token. Leave API token empty to keep the current token.",
+        "data": {
+          "host": "Router base URL",
+          "api_token": "API token (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach /api/v1/public on the router (check URL and network)",
+      "invalid_auth": "API token rejected (HTTP 401 on /api/v1/public)"
+    },
+    "abort": {
+      "already_configured": "This router URL is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Balansun options",
+        "description": "**REST only** is the default — full entity set via REST polling. Switch to **Companion** only when MQTT discovery is already active on this router (avoids duplicate entities; HACS adds the republish button only). Changing the mode reloads entities immediately.\n\n---\n\nLower refresh interval = more responsive sensors; higher = less load on the router LAN. Availability behavior on failed polls is configurable below.",
+        "data": {
+          "integration_mode": "Integration mode",
+          "scan_interval": "REST refresh interval (seconds)",
+          "skip_unavailable_on_failure": "Skip unavailable state on failed refresh",
+          "failure_count_until_unavailable": "Failed refreshes before unavailable (skip mode, 0 = never)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "integration_mode": {
+      "options": {
+        "rest_only": "REST only (default) — Full entity set via REST polling (sensors, vacation, triac, actions, …).",
+        "companion": "Companion — MQTT discovery already active: HACS adds only Republish MQTT discovery (no duplicate entities)."
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  changes:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    outputs:
+      integration: ${{ steps.filter.outputs.integration }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            integration:
+              - 'custom_components/**'
+              - 'scripts/**'
+              - 'tests/**'
+              - 'hacs.json'
+              - '.github/workflows/**'
+              - 'requirements-dev.txt'
+              - '.ci/**'
+              - 'CHANGELOG.md'
+
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Brand assets (committed PNGs)
+        run: |
+          test -f custom_components/balansun/brand/icon.png
+          test -f custom_components/balansun/brand/icon@2x.png
+          test -f custom_components/balansun/brand/dark_icon.png
+          test -f custom_components/balansun/brand/logo.png
+          test ! -f custom_components/balansun/icon.png
+          cmp custom_components/balansun/brand/icon.png custom_components/balansun/brand/dark_icon.png && exit 1 || true
+      - uses: home-assistant/actions/hassfest@master
+      - name: HACS validation
+        uses: nick-fields/retry@v3
+        env:
+          REPOSITORY_REF: main
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 90
+          command: |
+            docker run --rm \
+              -e INPUT_CATEGORY=integration \
+              -e INPUT_GITHUB_TOKEN="${{ github.token }}" \
+              -e GITHUB_REPOSITORY="${{ github.repository }}" \
+              -e GITHUB_WORKSPACE="/github/workspace" \
+              -e GITHUB_EVENT_PATH="/github/event.json" \
+              -e GITHUB_EVENT_NAME="${{ github.event_name }}" \
+              -e REPOSITORY_REF=main \
+              -v "${{ github.workspace }}:/github/workspace" \
+              -v "${{ github.event_path }}:/github/event.json:ro" \
+              ghcr.io/hacs/action:main
+      - name: Install test dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Python syntax check
+        run: python3 -m compileall custom_components/balansun
+      - name: Unit tests
+        run: ./scripts/test-unit.sh
+      - name: Release zip layout (HACS zip_release)
+        run: |
+          chmod +x scripts/build-release.sh scripts/verify-release-zip.sh
+          ./scripts/build-release.sh
+
+  prerelease-gate:
+    needs: [changes, validate]
+    if: |
+      always() &&
+      !cancelled() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.eval.outputs.should_publish }}
+    steps:
+      - id: eval
+        name: Evaluate nightly pre-release (paths + CI green)
+        run: |
+          set -eu
+          publish_paths=false
+          if [ "${{ needs.changes.outputs.integration }}" = "true" ]; then
+            publish_paths=true
+          fi
+
+          check() {
+            name="$1"
+            result="$2"
+            case "$result" in
+              success|skipped) echo "OK: ${name} (${result})" ;;
+              *) echo "::error::${name} is ${result} — nightly pre-release blocked until CI is green" >&2; return 1 ;;
+            esac
+          }
+
+          failed=0
+          check validate "${{ needs.validate.result }}" || failed=1
+
+          if [ "$failed" -ne 0 ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          if [ "$publish_paths" != true ]; then
+            echo "::notice::Nightly pre-release skipped — no integration path changes in this commit (CI still runs)."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          echo "CI green and path filter matched — publishing nightly pre-release."
+
+  prerelease-tag:
+    needs: [prerelease-gate]
+    if: |
+      always() &&
+      !cancelled() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      needs.prerelease-gate.result == 'success' &&
+      needs.prerelease-gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.tag.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute nightly pre-release tag
+        id: tag
+        run: |
+          chmod +x .ci/ci_prerelease_tag.sh
+          echo "tag_name=$(./.ci/ci_prerelease_tag.sh '${{ github.sha }}')" >> "$GITHUB_OUTPUT"
+
+  publish-prerelease:
+    needs: [prerelease-gate, prerelease-tag]
+    if: |
+      always() &&
+      !cancelled() &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      needs.prerelease-gate.result == 'success' &&
+      needs.prerelease-gate.outputs.should_publish == 'true' &&
+      needs.prerelease-tag.result == 'success'
+    uses: ./.github/workflows/release.yaml
+    permissions:
+      contents: write
+    with:
+      tag_name: ${{ needs.prerelease-tag.outputs.tag_name }}
+      prerelease: true
+      target_sha: ${{ github.sha }}
+    secrets: inherit

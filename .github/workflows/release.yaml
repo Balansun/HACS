@@ -1,0 +1,212 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Git tag for the release (e.g. v0.1.0-nightly.abc1234)
+        required: true
+        type: string
+      prerelease:
+        description: Mark as GitHub prerelease
+        type: boolean
+        default: true
+      target_sha:
+        description: Commit SHA to build and attach the release to
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: Mark GitHub Release as draft (ignored on artifact-only runs)
+        type: boolean
+        default: false
+      prerelease:
+        description: Mark GitHub Release as prerelease (tags v*-* auto-detect)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Callable from ci.yml on push: github.event_name stays "push", not workflow_call.
+# Detect CI nightly builds via inputs.tag_name / inputs.target_sha (see actions/runner#3146).
+
+jobs:
+  validate:
+    if: inputs.tag_name != '' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha != '' && inputs.target_sha || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Brand assets (committed PNGs)
+        run: |
+          test -f custom_components/balansun/brand/icon.png
+          test -f custom_components/balansun/brand/icon@2x.png
+          test -f custom_components/balansun/brand/dark_icon.png
+          test -f custom_components/balansun/brand/logo.png
+          test ! -f custom_components/balansun/icon.png
+          cmp custom_components/balansun/brand/icon.png custom_components/balansun/brand/dark_icon.png && exit 1 || true
+      - uses: home-assistant/actions/hassfest@master
+      - name: HACS validation
+        uses: nick-fields/retry@v3
+        env:
+          REPOSITORY_REF: main
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 90
+          command: |
+            docker run --rm \
+              -e INPUT_CATEGORY=integration \
+              -e INPUT_GITHUB_TOKEN="${{ github.token }}" \
+              -e GITHUB_REPOSITORY="${{ github.repository }}" \
+              -e GITHUB_WORKSPACE="/github/workspace" \
+              -e GITHUB_EVENT_PATH="/github/event.json" \
+              -e GITHUB_EVENT_NAME="${{ github.event_name }}" \
+              -e REPOSITORY_REF=main \
+              -v "${{ github.workspace }}:/github/workspace" \
+              -v "${{ github.event_path }}:/github/event.json:ro" \
+              ghcr.io/hacs/action:main
+      - name: Install test dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Python syntax check
+        run: python3 -m compileall custom_components/balansun
+      - name: Unit tests
+        run: ./scripts/test-unit.sh
+
+  build-release:
+    needs: validate
+    if: >-
+      always() &&
+      !cancelled() &&
+      (needs.validate.result == 'success' || needs.validate.result == 'skipped') &&
+      (
+        inputs.tag_name != '' ||
+        github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha != '' && inputs.target_sha || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve release tag and integration version
+        id: tag
+        run: |
+          set -eu
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            tag="${{ inputs.tag_name }}"
+            echo "BALANSUN_HACS_VERSION=${tag#v}" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG_NAME=${tag}" >> "$GITHUB_ENV"
+            echo "release_tag=${tag}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "BALANSUN_HACS_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+            echo "RELEASE_TAG_NAME=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+            echo "release_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_tag=" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Patch manifest version for release zip
+        if: env.BALANSUN_HACS_VERSION != ''
+        run: python3 scripts/set_manifest_version.py
+      - name: Verify manifest version matches tag
+        if: env.RELEASE_TAG_NAME != ''
+        env:
+          RELEASE_TAG_NAME: ${{ env.RELEASE_TAG_NAME }}
+        run: python3 scripts/verify_release_version.py
+      - name: Build integration zip
+        run: |
+          chmod +x scripts/build-release.sh scripts/verify-release-zip.sh
+          ./scripts/build-release.sh
+      - name: Upload release zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: balansun-hacs-${{ env.RELEASE_TAG_NAME || github.sha }}
+          path: balansun-hacs.zip
+          if-no-files-found: error
+      - name: Write release notes
+        if: env.RELEASE_TAG_NAME != ''
+        run: |
+          set -eu
+          tag="${RELEASE_TAG_NAME}"
+          chmod +x .ci/release_notes_template.sh
+          ./.ci/release_notes_template.sh "${tag}" > RELEASE_BODY.md
+          if [[ "${tag}" == *"-nightly."* ]]; then
+            {
+              echo ""
+              echo "> Automated **nightly** from \`main\` after HACS CI (\`${{ inputs.target_sha != '' && inputs.target_sha || github.sha }}\`)."
+            } >> RELEASE_BODY.md
+          fi
+          {
+            echo ""
+            echo "## Artifact"
+            echo ""
+            echo "Download \`balansun-hacs.zip\` and install via HACS (**Releases** tab) or extract into \`config/custom_components/\`."
+            echo ""
+            echo "Release checklist: https://balansun.clouded.fr/en/developer/#hacs-integration-release"
+          } >> RELEASE_BODY.md
+      - name: Upload release notes
+        if: env.RELEASE_TAG_NAME != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ env.RELEASE_TAG_NAME }}
+          path: RELEASE_BODY.md
+
+  publish:
+    needs: build-release
+    if: needs.build-release.outputs.release_tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download release zip
+        uses: actions/download-artifact@v4
+        with:
+          name: balansun-hacs-${{ needs.build-release.outputs.release_tag }}
+          path: release/
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes-${{ needs.build-release.outputs.release_tag }}
+          path: .
+      - name: Skip publish when release already exists
+        if: inputs.tag_name != ''
+        id: existing_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          tag="${{ inputs.tag_name }}"
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "Release ${tag} already exists — skipping publish (idempotent re-run)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create GitHub Release
+        if: inputs.tag_name == '' || steps.existing_release.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-release.outputs.release_tag }}
+          target_commitish: ${{ inputs.target_sha != '' && inputs.target_sha || github.sha }}
+          files: release/balansun-hacs.zip
+          body_path: RELEASE_BODY.md
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft }}
+          prerelease: >-
+            ${{ (inputs.tag_name != '' && inputs.prerelease) ||
+            (github.event_name == 'workflow_dispatch' && inputs.prerelease) ||
+            contains(needs.build-release.outputs.release_tag, '-') }}
+          generate_release_notes: false
+          make_latest: false

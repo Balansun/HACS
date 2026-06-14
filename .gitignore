@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+.venv-ha/
+.pytest_cache/
+.cursor/
+.DS_Store
+__pycache__/
+*.py[cod]
+.coverage
+balansun-hacs.zip
+.pytest_deps/

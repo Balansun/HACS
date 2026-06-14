@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a problem with the Balansun HACS integration
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** include API tokens or router passwords. Redact your router URL if needed.
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.3.0"
+    validations:
+      required: true
+  - type: input
+    id: integration_version
+    attributes:
+      label: Balansun integration version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Integration diagnostics (redact tokens) or HA log excerpt
+      render: shell
