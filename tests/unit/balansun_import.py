@@ -238,3 +238,24 @@ def load_action_node_climate():
     sys.modules[f"{_PKG_NAME}.action_node_coordinator"] = coord_mod
 
     return load_module("climate.py")
+
+
+def load_button():
+    load_coordinator()
+    load_config_registry()
+    _stub_ha()
+    _stub_update_coordinator()
+    entity_ha = sys.modules.setdefault("homeassistant.helpers.entity", ModuleType("entity"))
+    entity_ha.EntityCategory = type(
+        "EntityCategory", (), {"CONFIG": "config", "DIAGNOSTIC": "diagnostic"}
+    )
+    button_ha = sys.modules.setdefault("homeassistant.components.button", ModuleType("button"))
+
+    class ButtonEntity:
+        pass
+
+    button_ha.ButtonEntity = ButtonEntity  # type: ignore[attr-defined]
+    for mod_name in (f"{_PKG_NAME}.entity", f"{_PKG_NAME}.button"):
+        sys.modules.pop(mod_name, None)
+    load_module("device_info.py")
+    return load_module("button.py")

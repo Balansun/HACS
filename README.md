@@ -31,7 +31,7 @@ Integration icons/logos ship in [`custom_components/balansun/brand/`](custom_com
 ## Install
 
 1. In HACS: **Settings → Custom repositories** → add `https://github.com/Balansun/HACS` (category **Integration**). No repository subpath.
-2. Install **Balansun** from HACS (**Releases** tab → `v0.1.x` when offered) and restart Home Assistant.
+2. Install **Balansun** from HACS (**Releases** tab → newest **nightly pre-release**, e.g. `v0.1.0-nightly.<sha>`) and restart Home Assistant.
 3. **Settings → Devices & services → Add integration → Balansun**.
 4. Enter `http://<router-ip>` and optional API token (router **More → API** permanent access tokens when HTTP API protection is enabled).
 
@@ -51,9 +51,9 @@ Integration icons/logos ship in [`custom_components/balansun/brand/`](custom_com
 ### Balansun missing from “Add integration”?
 
 1. **Settings → System → Logs** — search for `balansun`. An `ImportError` or version message means the custom component did not load (fix the error, or upgrade Home Assistant to **2026.3+**).
-2. Confirm the folder exists: `config/custom_components/balansun/manifest.json` (not `custom_components/balansun/balansun/` — if nested, remove the folder, **Redownload** release **v0.1.0**, restart).
+2. Confirm the folder exists: `config/custom_components/balansun/manifest.json` (not `custom_components/balansun/balansun/` — if nested, remove the folder, **Redownload** the latest nightly release, restart).
 3. In HACS, open **Balansun →** use **Redownload** and pick the latest **Release** (not a hidden/empty default branch). Restart Home Assistant.
-4. If you previously installed a broken release zip, remove `config/custom_components/balansun`, redownload release **v0.1.0**, restart, then add the integration again.
+4. If you previously installed a broken release zip, remove `config/custom_components/balansun`, redownload the latest nightly release, restart, then add the integration again.
 
 **Initial release 0.1.0:** per-router `unique_id` (`{config_entry_id}_{key}`), HA brand icons, `issue_tracker` in manifest, and device **Open router UI** link (`configuration_url`).
 
@@ -64,7 +64,7 @@ Integration icons/logos ship in [`custom_components/balansun/brand/`](custom_com
 | Mode | Entities |
 |------|----------|
 | **`rest_only`** (default) | Full MQTT discovery parity via REST (sensors, binary sensors, vacation, triac, actions, …) |
-| **`companion`** | `button.republish_discovery` only when MQTT discovery is active on this router |
+| **`companion`** | Action buttons only when MQTT discovery is active: **Republish MQTT discovery**, **Run self-test** (router profiles), **Reboot device** — no duplicate sensors |
 
 Configure mode and REST refresh interval (1 s – 5 min) under **Settings → Devices & services → Balansun → Configure** (changes apply without restart).
 
@@ -78,7 +78,9 @@ Diagnostics: **Settings → Devices → Diagnostics** (redacted token, effective
 | Broker automations & device triggers | UI setup without editing discovery YAML |
 | Lowest latency MQTT commands | Full entity surface when no MQTT entities |
 
-**Hybrid:** default is **rest_only** (full HACS entities). If MQTT discovery is already active on the router, open **Configure** and switch to **companion** so HACS does not duplicate MQTT entities.
+**Hybrid:** default is **rest_only** (full HACS entities). If MQTT discovery is already active on the router, open **Configure** and switch to **companion** so HACS does not duplicate MQTT sensors (HACS still adds republish, self-test, and reboot buttons).
+
+**Reboot device** schedules a router restart (~500 ms); the device is briefly unavailable. There is no confirmation dialog in Home Assistant.
 
 ## Development
 

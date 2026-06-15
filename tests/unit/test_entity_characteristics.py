@@ -69,6 +69,23 @@ def test_binary_sensors_have_device_class():
         assert spec.binary_device_class == dc
 
 
+def test_device_reboot_button_metadata():
+    spec = _spec_by_key("device_reboot")
+    assert spec.platform == "button"
+    assert spec.button_action == "device_reboot"
+    assert spec.companion_allowed is True
+    assert spec.entity_category == "diagnostic"
+    assert spec.icon == "mdi:restart"
+    assert spec.capability is None
+
+
+def test_self_test_run_companion_allowed():
+    spec = _spec_by_key("self_test_run")
+    assert spec.companion_allowed is True
+    assert spec.button_action == "self_test_run"
+    assert spec.capability == "self_test_triac"
+
+
 def test_status_led_colors_are_light_platform():
     for spec in config_registry.status_led_entities():
         if spec.key.startswith("status_led_color_"):

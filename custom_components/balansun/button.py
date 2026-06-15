@@ -36,6 +36,9 @@ class BalansunButton(BalansunEntity, ButtonEntity):
             await self.coordinator.async_post_status_led_test(self._status_led_test_body())
         elif self.spec.button_action == "self_test_run":
             await self.coordinator.async_post_self_test_run()
+        elif self.spec.button_action == "device_reboot":
+            await self.coordinator.async_post_system_reboot()
+            return
         await self.coordinator.async_request_refresh_after_write()
 
     def _status_led_test_body(self) -> dict[str, Any]:

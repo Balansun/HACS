@@ -30,7 +30,7 @@
     "step": {
       "init": {
         "title": "Balansun options",
-        "description": "**REST only** is the default — full entity set via REST polling. Switch to **Companion** only when MQTT discovery is already active on this router (avoids duplicate entities; HACS adds the republish button only). Changing the mode reloads entities immediately.\n\n---\n\nLower refresh interval = more responsive sensors; higher = less load on the router LAN. Availability behavior on failed polls is configurable below.",
+        "description": "**REST only** is the default — full entity set via REST polling. Switch to **Companion** only when MQTT discovery is already active on this router (avoids duplicate sensors; HACS adds action buttons only: republish discovery, run self-test, reboot). Changing the mode reloads entities immediately.\n\n---\n\nLower refresh interval = more responsive sensors; higher = less load on the router LAN. Availability behavior on failed polls is configurable below.",
         "data": {
           "integration_mode": "Integration mode",
           "scan_interval": "REST refresh interval (seconds)",
@@ -44,7 +44,7 @@
     "integration_mode": {
       "options": {
         "rest_only": "REST only (default) — Full entity set via REST polling (sensors, vacation, triac, actions, …).",
-        "companion": "Companion — MQTT discovery already active: HACS adds only Republish MQTT discovery (no duplicate entities)."
+        "companion": "Companion — MQTT discovery already active: HACS adds action buttons only (republish discovery, run self-test, reboot device; no duplicate sensors)."
       }
     }
   }

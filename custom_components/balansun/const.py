@@ -27,4 +27,4 @@ POST_WRITE_REFRESH_DELAY_SEC = 0.75
 # Source changes re-init metering drivers and EEPROM — allow extra time before poll.
 POST_WRITE_SOURCE_DELAY_SEC = 1.5
 
-COMPANION_ENTITY_KEYS = frozenset({"republish_discovery"})
+COMPANION_ENTITY_KEYS = frozenset({"republish_discovery", "self_test_run", "device_reboot"})

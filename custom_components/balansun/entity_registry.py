@@ -630,6 +630,15 @@ STATIC_ENTITIES: tuple[HelioEntitySpec, ...] = (
         icon="mdi:mqtt",
     ),
     HelioEntitySpec(
+        key="device_reboot",
+        platform="button",
+        name="Reboot device",
+        button_action="device_reboot",
+        companion_allowed=True,
+        entity_category="diagnostic",
+        icon="mdi:restart",
+    ),
+    HelioEntitySpec(
         key="house_net_power_w",
         platform="sensor",
         name="House net power",
@@ -1091,6 +1100,7 @@ STATIC_ENTITIES: tuple[HelioEntitySpec, ...] = (
         name="Run self-test",
         button_action="self_test_run",
         capability="self_test_triac",
+        companion_allowed=True,
         entity_category="diagnostic",
         icon="mdi:play-circle-outline",
     ),

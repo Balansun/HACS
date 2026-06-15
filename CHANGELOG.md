@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **`button.device_reboot`** — `POST /api/v1/system/reboot` in `rest_only` and **companion** modes.
+
+### Changed
+
+- **`companion`** mode: action buttons **Republish MQTT discovery**, **Run self-test** (when `self_test_triac`), and **Reboot device** (no duplicate sensors or config entities).
+
 ## [0.1.0] - 2026-06-14
 
 ### Added

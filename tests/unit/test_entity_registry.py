@@ -6,6 +6,7 @@ const = load_const()
 entity_registry = load_entity_registry()
 
 MODE_REST_ONLY = const.MODE_REST_ONLY
+MODE_COMPANION = const.MODE_COMPANION
 entities_for_mode = entity_registry.entities_for_mode
 iter_action_specs = entity_registry.iter_action_specs
 iter_temperature_specs = entity_registry.iter_temperature_specs
@@ -442,6 +443,35 @@ def test_self_test_run_button_gated_by_capability():
         s.key for s in entities_for_mode(JSY_MK194_METER_DEVICE, MODE_REST_ONLY, platform="button")
     }
     assert "self_test_run" not in meter_keys
+
+
+def test_companion_mode_includes_action_buttons():
+    minimal = {"measurements": {}, "snapshot": {}}
+    button_keys = {
+        s.key for s in entities_for_mode(minimal, MODE_COMPANION, platform="button")
+    }
+    assert button_keys == {"republish_discovery", "device_reboot"}
+
+    router_with_self_test = {
+        **JSY_MK194_ROUTER_DEVICE,
+        "device": {
+            "capabilities": {
+                **JSY_MK194_ROUTER_DEVICE["device"]["capabilities"],
+                "firmware_capabilities": {
+                    **JSY_MK194_ROUTER_DEVICE["device"]["capabilities"]["firmware_capabilities"],
+                    "self_test_triac": True,
+                },
+            }
+        },
+    }
+    button_keys_router = {
+        s.key
+        for s in entities_for_mode(router_with_self_test, MODE_COMPANION, platform="button")
+    }
+    assert button_keys_router == {"republish_discovery", "device_reboot", "self_test_run"}
+    assert "device_reboot" in {
+        s.key for s in entities_for_mode(router_with_self_test, MODE_REST_ONLY, platform="button")
+    }
 
 
 def test_self_test_last_run_sensor_gated_and_reads_epoch():

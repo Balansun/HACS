@@ -30,7 +30,7 @@
     "step": {
       "init": {
         "title": "Options Balansun",
-        "description": "**REST seul** est le mode par défaut — ensemble complet d'entités via polling REST. Passer en **Compagnon** uniquement si la découverte MQTT est déjà active sur ce routeur (évite les doublons ; HACS n'ajoute que le bouton republish). Le changement de mode recharge les entités immédiatement.\n\n---\n\nIntervalle court = capteurs plus réactifs ; intervalle long = moins de charge sur le LAN du routeur. Le comportement de disponibilité en cas d'échec d'actualisation est configurable ci-dessous.",
+        "description": "**REST seul** est le mode par défaut — ensemble complet d'entités via polling REST. Passer en **Compagnon** uniquement si la découverte MQTT est déjà active sur ce routeur (évite les doublons de capteurs ; HACS n'ajoute que des boutons d'action : republish, auto-test, redémarrage). Le changement de mode recharge les entités immédiatement.\n\n---\n\nIntervalle court = capteurs plus réactifs ; intervalle long = moins de charge sur le LAN du routeur. Le comportement de disponibilité en cas d'échec d'actualisation est configurable ci-dessous.",
         "data": {
           "integration_mode": "Mode d'intégration",
           "scan_interval": "Intervalle d'actualisation REST (secondes)",
@@ -44,7 +44,7 @@
     "integration_mode": {
       "options": {
         "rest_only": "REST seul (par défaut) — Ensemble complet d'entités via polling REST (capteurs, vacances, triac, actions, …).",
-        "companion": "Compagnon — Découverte MQTT déjà active : HACS n'ajoute que Republier la découverte MQTT (pas de doublons)."
+        "companion": "Compagnon — Découverte MQTT déjà active : HACS n'ajoute que des boutons d'action (republish, auto-test, redémarrage ; pas de doublons de capteurs)."
       }
     }
   },
@@ -119,6 +119,9 @@
     "button": {
       "self_test_run": {
         "name": "Lancer l'auto-test"
+      },
+      "device_reboot": {
+        "name": "Redémarrer l'appareil"
       }
     }
   }

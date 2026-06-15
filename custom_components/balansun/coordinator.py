@@ -354,6 +354,10 @@ class BalansunCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         async with await self._request("POST", "/api/v1/health/self-test/run") as resp:
             await self._raise_for_write_response(resp)
 
+    async def async_post_system_reboot(self) -> None:
+        async with await self._request("POST", "/api/v1/system/reboot") as resp:
+            await self._raise_for_write_response(resp)
+
     def _bool_on(self, data: dict[str, Any], key: str) -> bool:
         val = read_binary_value(data, key)
         return bool(val) if val is not None else False
