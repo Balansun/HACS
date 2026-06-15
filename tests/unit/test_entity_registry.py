@@ -293,6 +293,34 @@ def test_temperature_capability_disabled_slots():
     assert entity_registry.iter_temperature_specs(data) == []
 
 
+def test_read_snapshot_key_temperature_c_ignores_invalid_state():
+    data = {
+        "measurements": {},
+        "state": {"temperature_c": -127},
+        "snapshot": {},
+    }
+    assert read_snapshot_key(data, "temperature_c") is None
+
+
+def test_read_snapshot_key_temperature_slot_ignores_invalid_reading():
+    data = {
+        "measurements": {
+            "temperature_sensors": {
+                "sensors": [
+                    {
+                        "slot": 1,
+                        "enabled": True,
+                        "valid": True,
+                        "temperature_c": -127,
+                    },
+                ],
+            },
+        },
+        "snapshot": {},
+    }
+    assert read_snapshot_key(data, "temperature_slot_1_c") is None
+
+
 def test_state_machine_entities_from_health_and_status():
     data = {
         "health": {

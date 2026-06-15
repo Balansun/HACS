@@ -350,7 +350,27 @@ def _read_second_channel_from_measurements(
     return block.get(field)
 
 
+def _read_primary_temperature_c(data: dict[str, Any]) -> Any:
+    m = _measurements(data)
+    val = m.get("temperature_c") if isinstance(m, dict) else None
+    if _temperature_reading_valid(val):
+        return val
+    st = _state(data)
+    if isinstance(st, dict):
+        val = st.get("temperature_c")
+        if _temperature_reading_valid(val):
+            return val
+    snap = _snapshot(data)
+    if isinstance(snap, dict):
+        val = snap.get("temperature_c")
+        if _temperature_reading_valid(val):
+            return val
+    return None
+
+
 def read_snapshot_key(data: dict[str, Any], key: str) -> Any:
+    if key == "temperature_c":
+        return _read_primary_temperature_c(data)
     snap = _snapshot(data)
     if key in snap:
         return snap[key]
@@ -402,7 +422,8 @@ def read_snapshot_key(data: dict[str, Any], key: str) -> Any:
         if slot >= 0:
             entry = _temperature_sensor_entry(data, slot)
             if entry and entry.get("enabled") and entry.get("valid"):
-                return entry.get("temperature_c")
+                tc = entry.get("temperature_c")
+                return tc if _temperature_reading_valid(tc) else None
     diag = _diagnostics(data)
     if key in diag:
         return diag[key]
