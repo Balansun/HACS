@@ -119,9 +119,13 @@ def _firmware_capabilities(data: dict[str, Any]) -> dict[str, Any]:
 
 
 # Entity key -> (measurements section, field) for CH2 REST parity with nested /measurements JSON.
-_SECOND_CHANNEL_MEASUREMENT_KEYS: dict[str, tuple[str, str]] = {
+_CHANNEL_MEASUREMENT_KEYS: dict[str, tuple[str, str]] = {
+    "house_apparent_import_va": ("house", "apparent_import_va"),
+    "house_apparent_export_va": ("house", "apparent_export_va"),
     "second_active_import_w": ("second", "active_import_w"),
     "second_active_export_w": ("second", "active_export_w"),
+    "second_apparent_import_va": ("second", "apparent_import_va"),
+    "second_apparent_export_va": ("second", "apparent_export_va"),
     "second_voltage_v": ("raw_meter", "voltage_second_v"),
     "second_current_a": ("raw_meter", "current_second_a"),
     "second_power_factor": ("raw_meter", "pf_second"),
@@ -129,8 +133,15 @@ _SECOND_CHANNEL_MEASUREMENT_KEYS: dict[str, tuple[str, str]] = {
     "second_energy_export_wh": ("second", "energy_total_export_wh"),
     "second_day_energy_import_wh": ("second", "energy_day_import_wh"),
     "second_day_energy_export_wh": ("second", "energy_day_export_wh"),
+    "house_yesterday_energy_import_wh": ("house", "energy_yesterday_import_wh"),
+    "house_yesterday_energy_export_wh": ("house", "energy_yesterday_export_wh"),
+    "second_yesterday_energy_import_wh": ("second", "energy_yesterday_import_wh"),
+    "second_yesterday_energy_export_wh": ("second", "energy_yesterday_export_wh"),
     "mains_frequency_hz": ("raw_meter", "freq_hz"),
 }
+
+# ponytail: alias kept for call sites
+_SECOND_CHANNEL_MEASUREMENT_KEYS = _CHANNEL_MEASUREMENT_KEYS
 
 
 def _temperature_sensors_block(data: dict[str, Any]) -> dict[str, Any]:
@@ -340,7 +351,7 @@ def iter_temperature_specs(data: dict[str, Any]) -> list[HelioEntitySpec]:
 def _read_second_channel_from_measurements(
     measurements: dict[str, Any], key: str
 ) -> Any:
-    mapping = _SECOND_CHANNEL_MEASUREMENT_KEYS.get(key)
+    mapping = _CHANNEL_MEASUREMENT_KEYS.get(key)
     if not mapping:
         return None
     section, field = mapping
@@ -467,6 +478,8 @@ _PROBE_LABEL_METRIC_SUFFIX: dict[str, tuple[str, str]] = {
     "house_energy_export_wh": ("house", "energy export"),
     "house_day_energy_import_wh": ("house", "day energy import"),
     "house_day_energy_export_wh": ("house", "day energy export"),
+    "house_yesterday_energy_import_wh": ("house", "yesterday energy import"),
+    "house_yesterday_energy_export_wh": ("house", "yesterday energy export"),
     "house_apparent_import_va": ("house", "apparent import"),
     "house_apparent_export_va": ("house", "apparent export"),
     "second_active_import_w": ("second", "active import"),
@@ -478,6 +491,8 @@ _PROBE_LABEL_METRIC_SUFFIX: dict[str, tuple[str, str]] = {
     "second_energy_export_wh": ("second", "energy export"),
     "second_day_energy_import_wh": ("second", "day energy import"),
     "second_day_energy_export_wh": ("second", "day energy export"),
+    "second_yesterday_energy_import_wh": ("second", "yesterday energy import"),
+    "second_yesterday_energy_export_wh": ("second", "yesterday energy export"),
     "second_apparent_import_va": ("second", "apparent import"),
     "second_apparent_export_va": ("second", "apparent export"),
 }
@@ -739,6 +754,22 @@ STATIC_ENTITIES: tuple[HelioEntitySpec, ...] = (
         state_class="total_increasing",
     ),
     HelioEntitySpec(
+        key="house_yesterday_energy_import_wh",
+        platform="sensor",
+        name="House yesterday energy import",
+        native_unit=UnitOfEnergy.WATT_HOUR,
+        device_class="energy",
+        state_class="measurement",
+    ),
+    HelioEntitySpec(
+        key="house_yesterday_energy_export_wh",
+        platform="sensor",
+        name="House yesterday energy export",
+        native_unit=UnitOfEnergy.WATT_HOUR,
+        device_class="energy",
+        state_class="measurement",
+    ),
+    HelioEntitySpec(
         key="triac_open_percent",
         platform="sensor",
         name="Triac open",
@@ -833,6 +864,24 @@ STATIC_ENTITIES: tuple[HelioEntitySpec, ...] = (
         native_unit=UnitOfEnergy.WATT_HOUR,
         device_class="energy",
         state_class="total_increasing",
+        capability="surplus_regulation",
+    ),
+    HelioEntitySpec(
+        key="second_yesterday_energy_import_wh",
+        platform="sensor",
+        name="Second yesterday energy import",
+        native_unit=UnitOfEnergy.WATT_HOUR,
+        device_class="energy",
+        state_class="measurement",
+        capability="surplus_regulation",
+    ),
+    HelioEntitySpec(
+        key="second_yesterday_energy_export_wh",
+        platform="sensor",
+        name="Second yesterday energy export",
+        native_unit=UnitOfEnergy.WATT_HOUR,
+        device_class="energy",
+        state_class="measurement",
         capability="surplus_regulation",
     ),
     HelioEntitySpec(

@@ -166,6 +166,26 @@ def test_entity_display_name_triac_entities_use_action_zero_title():
     )
 
 
+def test_read_yesterday_energy_from_nested_measurements():
+    data = {
+        "snapshot": {},
+        "measurements": {
+            "house": {
+                "energy_yesterday_import_wh": 3100,
+                "energy_yesterday_export_wh": 420,
+            },
+            "second": {
+                "energy_yesterday_import_wh": 890,
+                "energy_yesterday_export_wh": 15,
+            },
+        },
+    }
+    assert read_snapshot_key(data, "house_yesterday_energy_import_wh") == 3100
+    assert read_snapshot_key(data, "house_yesterday_energy_export_wh") == 420
+    assert read_snapshot_key(data, "second_yesterday_energy_import_wh") == 890
+    assert read_snapshot_key(data, "second_yesterday_energy_export_wh") == 15
+
+
 def test_read_second_channel_from_nested_measurements():
     data = {
         "snapshot": {},
@@ -188,6 +208,20 @@ def test_read_second_channel_from_nested_measurements():
     assert read_snapshot_key(data, "second_current_a") == 6.33
     assert read_snapshot_key(data, "second_energy_import_wh") == 42599
     assert read_snapshot_key(data, "second_day_energy_import_wh") == 407
+
+
+def test_read_apparent_power_from_nested_measurements():
+    data = {
+        "snapshot": {},
+        "measurements": {
+            "house": {"apparent_import_va": 818, "apparent_export_va": 0},
+            "second": {"apparent_import_va": 0, "apparent_export_va": 12},
+        },
+    }
+    assert read_snapshot_key(data, "house_apparent_import_va") == 818
+    assert read_snapshot_key(data, "house_apparent_export_va") == 0
+    assert read_snapshot_key(data, "second_apparent_import_va") == 0
+    assert read_snapshot_key(data, "second_apparent_export_va") == 12
 
 
 def test_read_second_channel_prefers_snapshot():
